@@ -151,21 +151,21 @@ async def user_list(update, context):
                ]
                reply_markup = InlineKeyboardMarkup(inline_keyboard)
                await update.message.reply_text(text=user, reply_markup=reply_markup)
-async def change_erc20_diff(update,context):
-   text = update.message.text
-   if text == 'cancel':
-      await start(update,context)
-      return ConversationHandler.END
-   if text.isnumeric() == False:
-      await update.message.reply_text(text="عدد وارد کنید")
-      await start(update,context)
-      return ConversationHandler.END
-   main_json["erc20_diff"] = text
-   with open(users_json,"w") as writer:
-      json.dump(main_json,writer)
-   await update.message.reply_text(text="تغییر کرد : {}".format(text))
-   await start(update,context)
-   return ConversationHandler.END
+async def change_erc20_diff(update, context):
+    text = update.message.text
+    if text == 'cancel':
+        await start(update, context)
+        return ConversationHandler.END
+    if not text.isnumeric():
+        await update.message.reply_text(text="عدد را وارد کنید")
+        await start(update, context)
+        return ConversationHandler.END
+    main_json["erc20_diff"] = text
+    with open(users_json, "w") as writer:
+        json.dump(main_json, writer)
+    await update.message.reply_text(text="تغییر کرد: {}".format(text))
+    await start(update, context)
+    return ConversationHandler.END
 async def change_networks_diff(update,context):
    text = update.message.text
    if text == 'cancel':
@@ -182,6 +182,17 @@ async def change_networks_diff(update,context):
    await start(update,context)
    return ConversationHandler.END
 async def inlines(update,context):
+   """
+   This asynchronous function takes in two parameters: `update` and `context`.
+   It checks whether the username of the user who sent the message is in `main_json["users"]`.
+   If the user is not in the list of users, the function does nothing.
+   If the user is in the list of users and their username is not in the `ban` list,
+   it sends a message saying that there are no coins in the list.
+   If the user is in the list of users and their username is in the `ban` list, it generates an inline keyboard
+     with the coins in the `ban` list. When the user selects a coin, it sends a 
+     callback query with the `delete_coin@{coin}` string. 
+     This function does not return anything.
+   """
    if update.message.chat.username.lower() in main_json["users"]:
       with open(users_json,"r") as users:
          ban = json.load(users)["ban"][update.message.chat.username.lower()]
@@ -191,64 +202,91 @@ async def inlines(update,context):
             inlinekeyboard = [[InlineKeyboardButton(text=coin,callback_data="delete_coin@"+coin)] for coin in ban]
             rp = InlineKeyboardMarkup(inlinekeyboard)
             await update.message.reply_text(text="ارز ها",reply_markup=rp)
-async def turnoff(update,context):
-   try:
-      if update.message.chat.username.lower() in main_json["users"].keys():
-         if main_json["users"][update.message.chat.username.lower()][1] == 1:
-            main_json["users"][update.message.chat.username.lower()][1] = 0
-            with open(users_json,"w") as file:
-               json.dump(main_json,file)
+async def turnoff(update, context):
+    """
+    Asynchronously turns off a user's status in the main JSON file, and sends a reply message.
+    
+    Args:
+        update (telegram.Update): The update object representing an incoming message.
+        context (telegram.ext.CallbackContext): The context object passed by the dispatcher.
+    
+    Returns:
+        None
+    """
+    try:
+        username = update.message.chat.username.lower()
+        users_dict = main_json.get("users", {})
+        if username in users_dict and users_dict[username][1] == 1:
+            users_dict[username][1] = 0
+            with open(users_json, "w") as file:
+                json.dump(main_json, file)
             await update.message.reply_text(text="خاموش شد")
-         else:
-            main_json["users"][update.message.chat.username.lower()][1] = 1
-            with open(users_json,"w") as file:
-               json.dump(main_json,file)
+        elif username in users_dict:
+            users_dict[username][1] = 1
+            with open(users_json, "w") as file:
+                json.dump(main_json, file)
             await update.message.reply_text(text="روشن شد")
-   except:
-      await update.message.reply_text(text="ناموفق بود")
-async def handler(update,context):
-   try:
-      if update.callback_query.message.chat.username.lower() in main_json["users"]:
-         query = update.callback_query.data
-         if "@" in query and update.callback_query.message.chat.username.lower() in main_json["users"]:
-            is_admin =  update.callback_query.message.chat.username.lower() in main_json["admin"]
-            new_query = query.split("@")
-            if new_query[0] == "block":
-               if update.callback_query.message.chat.username.lower() in block_list.keys():
-                  block_list[update.callback_query.message.chat.username.lower()].append(new_query[1])
-                  await update.callback_query.edit_message_text(text="بلاک شد")
-               else:
-                  block_list[update.callback_query.message.chat.username.lower()] = [new_query[1]]
-                  await update.callback_query.edit_message_text(text="بلاک شد")
-            elif new_query[0] == "delete" and is_admin:
-               deleted_user = new_query[1]
-               if deleted_user not in main_json["madmin"]:
-                  with open(users_json,"r") as files:
-                     del main_json["users"][deleted_user]
-                     with open(users_json,"w") as writer:
-                        json.dump(main_json,writer)
-                     await update.callback_query.edit_message_text(text="حدف شد")
-            elif new_query[0] == "access" and is_admin:
-               edited_user = new_query[1]
-               if edited_user not in main_json["madmin"]:
-                  main_json["users"][edited_user][2] = 1
-                  with open(users_json,"w") as writer:
-                     json.dump(main_json,writer)
-                  await update.callback_query.edit_message_text(text="روشن شد")
-            elif new_query[0] == "deny" and is_admin:
-               edited_user = new_query[1]
-               if edited_user not in main_json["madmin"]:
-                  main_json["users"][edited_user][2] = 0
-                  with open(users_json,"w") as writer:
-                     json.dump(main_json,writer)
-                  await update.callback_query.edit_message_text(text="خاموش شد")
-            elif new_query[0] == "delete_coin":
-               main_json["ban"][update.callback_query.message.chat.username.lower()].remove(new_query[1])
-               with open(users_json,"w") as file:
-                  json.dump(main_json,file)
-               await update.callback_query.edit_message_text(text="حذف شد")
-   except:
-      await update.callback_query.edit_message_text(text="ناموفق بود")
+    except Exception:
+        await update.message.reply_text(text="ناموفق بود")
+async def handler(update, context):
+    """
+    An async function that handles callback queries. It takes in an update object
+    and a context object. It retrieves the username from the update object, checks
+    if the user is in the main JSON file's "users" list, and then executes one of
+    five possible actions based on the query string in the callback data. The five
+    possible actions are: 
+    block a user (only if the user is an admin), 
+    delete a user (only if the user is an admin),
+    grant access to a user (only if the user is an admin),
+    deny access to a user(only if the user is an admin), and
+    delete a coin from a user's "ban" list. If
+    an exception is raised during execution, the function returns without executing
+    any actions and the callback message is updated with a "failure" message. The
+    function does not return anything.
+    """
+    try:
+        username = update.callback_query.message.chat.username.lower()
+
+        if username not in main_json["users"]:
+            return
+
+        query = update.callback_query.data
+        is_admin = username in main_json["admin"]
+        new_query = query.split("@")
+
+        if new_query[0] == "block":
+            block_list.setdefault(username, []).append(new_query[1])
+            await update.callback_query.edit_message_text(text="بلاک شد")
+        elif new_query[0] == "delete" and is_admin:
+            deleted_user = new_query[1]
+            if deleted_user not in main_json["madmin"]:
+                with open(users_json, "r") as files:
+                    del main_json["users"][deleted_user]
+                    with open(users_json, "w") as writer:
+                        json.dump(main_json, writer)
+                await update.callback_query.edit_message_text(text="حدف شد")
+        elif new_query[0] == "access" and is_admin:
+            edited_user = new_query[1]
+            if edited_user not in main_json["madmin"]:
+                main_json["users"][edited_user][2] = 1
+                with open(users_json, "w") as writer:
+                    json.dump(main_json, writer)
+                await update.callback_query.edit_message_text(text="روشن شد")
+        elif new_query[0] == "deny" and is_admin:
+            edited_user = new_query[1]
+            if edited_user not in main_json["madmin"]:
+                main_json["users"][edited_user][2] = 0
+                with open(users_json, "w") as writer:
+                    json.dump(main_json, writer)
+                await update.callback_query.edit_message_text(text="خاموش شد")
+        elif new_query[0] == "delete_coin":
+            main_json["ban"][username].remove(new_query[1])
+            with open(users_json, "w") as file:
+                json.dump(main_json, file)
+            await update.callback_query.edit_message_text(text="حذف شد")
+            
+    except Exception:
+        await update.callback_query.edit_message_text(text="ناموفق بود")
 async def inital_erc20_diff(update,context):
    if update.message.chat.username.lower() in main_json["users"]:
       if update.message.chat.username.lower() in main_json["admin"]:
@@ -263,29 +301,36 @@ async def inital_networks_diff(update,context):
          rp=telegram.ReplyKeyboardMarkup(list,resize_keyboard=True)
          await update.message.reply_text(text="مقدار را وارد کنید",reply_markup=rp)
          return NETWORKS_BOX
-async def addcoin(update,context):
-   if update.message.chat.username.lower() in main_json["users"]:
-      #if update.message.chat.username.lower() in main_json["admin"]:
-         list=[[telegram.KeyboardButton("cancel")]]
-         rp=telegram.ReplyKeyboardMarkup(list,resize_keyboard=True)
-         await update.message.reply_text(text="کوین را وارد کنید",reply_markup=rp)
-         return BOX
+async def addcoin(update, context):
+    if update.message.chat.username.lower() not in main_json["users"]:
+        return
+    rp = telegram.ReplyKeyboardMarkup(
+        [[telegram.KeyboardButton("cancel")]],
+        resize_keyboard=True
+    )
+    await update.message.reply_text(
+        text="کوین را وارد کنید",
+        reply_markup=rp
+    )
+    return BOX
 async def addcointext(update,context):
    try:
       text = update.message.text
       if text == 'cancel':
          await start(update,context)
          return ConversationHandler.END
+      
       main_json["ban"][update.message.chat.username.lower()].append(text)
       with open(users_json,"w") as writer:
          json.dump(main_json,writer)
+      
       await update.message.reply_text(text="کوین اضافه شد")
-      await start(update,context)
-      return ConversationHandler.END
+      
    except:
       await update.message.reply_text(text="ناموفق بود")
-      await start(update,context)
-      return ConversationHandler.END
+   
+   await start(update,context)
+   return ConversationHandler.END
 async def return1(update,context):
    await start(update,context)
    return ConversationHandler.END
