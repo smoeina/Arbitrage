@@ -72,32 +72,64 @@ async def message_to_admin(message):
          await bot_indiviual.send_message(id, text=message)
       except:
          continue
-async def start(update,context):
-   try:
-      list=[[telegram.KeyboardButton("Buy/Sell")],[telegram.KeyboardButton("Black List")],[telegram.KeyboardButton("Add")]]
-      with open(users_json,"r") as file:
-         data = json.load(file)
-         if update.message.chat.username.lower() not in data["users"]:
-            main_json["users"][update.message.chat.username.lower()] = [update.message.chat.id,1,0]
-            main_json["ban"][update.message.chat.username.lower()] = []
-            with open(users_json,"w") as file:
-               json.dump(main_json,file)
-            rp=telegram.ReplyKeyboardMarkup(list,resize_keyboard=True)
-            await message_to_admin("یوزر با یوزرنیم {} به لیست اضافه شد".format(update.message.chat.username))
-            await update.message.reply_text(text="یوزر شما به لیست یوزر ها اضافه شد ",reply_markup=rp)
-      if update.message.chat.username.lower() in main_json["admin"]:
-         list.append([telegram.KeyboardButton("Users")])
-         list.append([telegram.KeyboardButton('ERC20 : {}'.format(main_json["erc20_diff"]))]),
-         list.append([telegram.KeyboardButton('NETWORKS : {}'.format(main_json["networks_diff"]))])
-         rp=telegram.ReplyKeyboardMarkup(list,resize_keyboard=True)
-         await update.message.reply_text(text="Menu",reply_markup=rp)
-      elif update.message.chat.username.lower() in main_json["users"]:
-         rp=telegram.ReplyKeyboardMarkup(list,resize_keyboard=True)
-         await update.message.reply_text(text="Menu",reply_markup=rp)
-      else:
-         await update.message.reply_text(text="Menu")
-   except:
-      pass
+async def start(update, context):
+    """
+    This asynchronous function handles the start command of the bot. It takes the 
+    update and context parameters required for the Telegram API.
+
+    It reads a JSON file containing the users' information, and adds the current 
+    user to the list if it's not already there. If the user is an admin, the 
+    keyboard also contains some additional options.
+
+    Args:
+        update (telegram.Update): The update object required by the Telegram API.
+        context (telegram.ext.CallbackContext): The context object required by the 
+            Telegram API.
+
+    Returns:
+        None
+    """
+    try:
+        # Define the keyboard buttons for users
+        user_buttons = [
+            [telegram.KeyboardButton("Buy/Sell")],
+            [telegram.KeyboardButton("Black List")],
+            [telegram.KeyboardButton("Add")]
+        ]
+        # Read the users' data from the JSON file
+        with open(users_json, "r") as file:
+            main_json = json.load(file)
+            username = update.message.chat.username.lower()
+            # If the user is not already in the list, add them
+            if username not in main_json["users"]:
+                main_json["users"][username] = [update.message.chat.id, 1, 0]
+                main_json["ban"][username] = []
+                # Write the updated data back to the JSON file
+                with open(users_json, "w") as file:
+                    json.dump(main_json, file)
+                # Notify the admin that a user has been added
+                await message_to_admin("یوزر با یوزرنیم {} به لیست اضافه شد".format(username))
+                # Send a message to the user with the keyboard
+                user_keyboard = telegram.ReplyKeyboardMarkup(user_buttons, resize_keyboard=True)
+                await update.message.reply_text(text="یوزر شما به لیست یوزر ها اضافه شد ", reply_markup=user_keyboard)
+        # If the user is an admin, show the additional options
+        if username in main_json["admin"]:
+            admin_buttons = user_buttons + [
+                [telegram.KeyboardButton("Users")],
+                [telegram.KeyboardButton('ERC20 : {}'.format(main_json["erc20_diff"]))],
+                [telegram.KeyboardButton('NETWORKS : {}'.format(main_json["networks_diff"]))]
+            ]
+            admin_keyboard = telegram.ReplyKeyboardMarkup(admin_buttons, resize_keyboard=True)
+            await update.message.reply_text(text="Menu", reply_markup=admin_keyboard)
+        # If the user is a regular user, show the basic options
+        elif username in main_json["users"]:
+            user_keyboard = telegram.ReplyKeyboardMarkup(user_buttons, resize_keyboard=True)
+            await update.message.reply_text(text="Menu", reply_markup=user_keyboard)
+        # If the user is not in the list, show a basic message
+        else:
+            await update.message.reply_text(text="Menu")
+    except Exception:
+        pass
 async def user_list(update,context):
    if update.message.chat.username.lower() in main_json["admin"]:
       with open(users_json,"r") as users:
