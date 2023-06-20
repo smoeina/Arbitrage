@@ -1,6 +1,7 @@
 from collections import _OrderedDictValuesView
 import requests,asyncio,locale,telegram,json,threading,os,websockets
 from telegram.ext import *
+import aiohttp
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 locale.setlocale(locale.LC_ALL,"en_US.UTF8")
 token = "6180819073:AAG0Q58j8BiJo92YyenF6-2-kq0hfdCu7qQ"
@@ -356,26 +357,52 @@ conv_make_button = ConversationHandler(
         },
         fallbacks=[CommandHandler("cancel",return1)],
     )
+
+
 async def usdt_dispatcher():
-   global usdt_price
-   while 1:
-      try:
-         usdt_price = requests.get(usdt_price_ramzi_url).json()["data"][-1][0]
-         await asyncio.sleep(3)
-         continue
-      except:
-         continue
+    """
+    An asynchronous function that creates an aiohttp session object and loops indefinitely, making an HTTP GET request
+    to an external API every 3 seconds to retrieve the latest USDT price in JSON format. Any exceptions raised during the
+    request are printed to the console. No parameters are passed to the function and it does not return anything.
+    """
+    # create an aiohttp session object
+    async with aiohttp.ClientSession() as session:
+        # loop indefinitely
+        while True:
+            try:
+                # make an HTTP GET request to the external API
+                async with session.get(usdt_price_ramzi_url) as response:
+                    # get the JSON response data
+                    data = await response.json()
+                    # extract the latest USDT price from the JSON data
+                    usdt_price = data['data'][-1][0]
+            except Exception as e:
+                # print any exceptions that occur during the request
+                print(f"Exception encountered: {e}")
+            # wait for 3 seconds before making the next request
+            await asyncio.sleep(3)
 async def max_profit():
+   """
+   Asynchronously retrieves a list of coins along with their pair IDs from the pairs_url
+     and adds them to the main_list dictionary if their quote currency is "irr".
+       This function runs continuously and sleeps for 10 seconds after each iteration until it is manually stopped.
+
+   Parameters:
+   None
+
+   Returns:
+   None
+   """
    global main_list
-   while 1:
+   while True:
       try:
          coins = requests.get(pairs_url).json()["data"]
          for i in coins:
-            if (i["quote_currency_symbol"]["en"] == "irr"):
-               main_list[str(i["base_currency_symbol"]["en"]).upper()+"-USDT"] = i["pair_id"]
+            if i["quote_currency_symbol"]["en"] == "irr":
+               main_list[f"{i['base_currency_symbol']['en'].upper()}-USDT"] = i["pair_id"]
          await asyncio.sleep(10)
-      except:
-         continue
+      except Exception:
+         pass
 async def check_buy():
    global main_list
    global counter
