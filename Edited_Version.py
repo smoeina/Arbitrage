@@ -130,16 +130,27 @@ async def start(update, context):
             await update.message.reply_text(text="Menu")
     except Exception:
         pass
-async def user_list(update,context):
-   if update.message.chat.username.lower() in main_json["admin"]:
-      with open(users_json,"r") as users:
-         users = json.load(users)["users"]
+async def user_list(update, context):
+   """
+   Asynchronously lists users based on their usernames. This function takes in two parameters:
+   
+   - update: an object that represents an incoming Telegram message.
+   - context: an object that contains additional information about the message.
+   
+   This function does not return anything.
+   """
+   admin_username = update.message.chat.username.lower()
+   if admin_username in main_json["admin"]:
+      with open(users_json, "r") as users_file:
+         users = json.load(users_file)["users"]
          for user in users:
-            inlinekeyboard = [[InlineKeyboardButton(text="حذف",callback_data="delete@"+user)],
-            [InlineKeyboardButton(text="تمام رنج ها",callback_data="access@"+user)],
-            [InlineKeyboardButton(text="رنج خصوصی",callback_data="deny@"+user)]]
-            rp = InlineKeyboardMarkup(inlinekeyboard)
-            await update.message.reply_text(text=user,reply_markup=rp)
+               inline_keyboard = [
+                  [InlineKeyboardButton(text="حذف", callback_data=f"delete@{user}")],
+                  [InlineKeyboardButton(text="تمام رنج ها", callback_data=f"access@{user}")],
+                  [InlineKeyboardButton(text="رنج خصوصی", callback_data=f"deny@{user}")]
+               ]
+               reply_markup = InlineKeyboardMarkup(inline_keyboard)
+               await update.message.reply_text(text=user, reply_markup=reply_markup)
 async def change_erc20_diff(update,context):
    text = update.message.text
    if text == 'cancel':
