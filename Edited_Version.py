@@ -6,19 +6,28 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 locale.setlocale(locale.LC_ALL,"en_US.UTF8")
 token = "6180819073:AAG0Q58j8BiJo92YyenF6-2-kq0hfdCu7qQ"
 updater=Updater(token,update_queue=True)
+"""
+Mexc token information:
+Access Key: mx0vgl6BU92tqjoAxu
+Secret Key: 11d33bb82cf24ed0a8d855fe668a099c
+
+"""
 gate = "https://api.gateio.ws/api/v4/spot/tickers"
 pairs_url = "https://publicapi.ramzinex.com/exchange/api/v1.0/exchange/pairs"
 binance_coin_info = "https://api.binance.com/sapi/v1/capital/config/getall"
 kucoin_coin_info = "https://api.kucoin.com/api/v2/currencies/"
 binance_ticker = "https://api.binance.com/api/v3/ticker/price"
 kucoin_ticker = "https://api.kucoin.com/api/v1/market/allTickers"
-order_book = lambda id : "https://publicapi.ramzinex.com/exchange/api/v1.0/exchange/orderbooks/{}/buys?readable=0".format(str(id))
+order_book_buy = lambda id : "https://publicapi.ramzinex.com/exchange/api/v1.0/exchange/orderbooks/{}/buys?readable=0".format(str(id))
 order_book_sell = lambda id : "https://publicapi.ramzinex.com/exchange/api/v1.0/exchange/orderbooks/{}/sells?readable=0".format(str(id))
 usdt_price_ramzi_url = "https://publicapi.ramzinex.com/exchange/api/v1.0/exchange/orderbooks/11/sells?readable=0"
 priceable = lambda p : locale.currency(p,grouping=1,symbol=0)
 main_list = {}
 gate_coin = ["ARV_USDT","TONCOIN_USDT"]
-kucoin_coin = ["DC-USDT","BITDAO-USDT","ANC-USDT","BONE-USDT","VOLT-USDT","BRISE-USDT","BLUR-USDT","REV-USDT","TEL-USDT","CRO-USDT","KCS-USDT","OKB-USDT","HT-USDT","TITAN-USDT","HEGIC-USDT","VRA-USDT"]
+kucoin_coin = ["DC-USDT","BITDAO-USDT","ANC-USDT","BONE-USDT","VOLT-USDT",
+               "BRISE-USDT","BLUR-USDT","REV-USDT","TEL-USDT","CRO-USDT",
+               "KCS-USDT","OKB-USDT","HT-USDT","TITAN-USDT","HEGIC-USDT",
+               "VRA-USDT"]
 BOX = range(0)
 usdt_price = 0
 bot_indiviual = telegram.Bot(token=token)
@@ -26,7 +35,12 @@ ranges = [[0,10,200],[10,15,250],[15,20,400],[20,40,500],[40,49.9,1000]]
 #ranges = [[0,20,200],[20,25,300],[25,35,400],[35,50,1000],[50,100,2000],[100,1000,3000]]
 coefficient = {"100LUNC-USDT":["LUNC-USDT",100],"1000BTT-USDT":["BTTC-USDT",1000],
 "100XEC-USDT":["XEC-USDT",100],"100SHIB-USDT":["SHIB-USDT",100]}
-list_erc20 = ['VRA-USDT', 'HOT-USDT', 'MFT-USDT', 'TITAN-USDT', 'BNT-USDT', 'BADGER-USDT', 'NEXO-USDT', 'WAVES-USDT', 'ENS-USDT', 'API3-USDT', 'QNT-USDT', 'LEVER-USDT', 'OOKI-USDT', 'LOKA-USDT', 'HEGIC-USDT', '1M-KISHU-USDT', 'HT-USDT', 'OMG-USDT', 'OKB-USDT', 'KCS-USDT', 'CRV-USDT', 'GRT-USDT', 'AMP-USDT', 'DENT-USDT', '100STARL-USDT', 'CRO-USDT', 'AUDIO-USDT', 'DYDX-USDT', 'ENJ-USDT', 'HEX-USDT', 'MKR-USDT', 'PUNDIX-USDT', 'COMP-USDT', 'TEL-USDT', 'REV-USDT']
+list_erc20 = ['VRA-USDT', 'HOT-USDT', 'MFT-USDT', 'TITAN-USDT', 'BNT-USDT', 'BADGER-USDT',
+               'NEXO-USDT', 'WAVES-USDT', 'ENS-USDT', 'API3-USDT', 'QNT-USDT', 'LEVER-USDT',
+               'OOKI-USDT', 'LOKA-USDT', 'HEGIC-USDT', '1M-KISHU-USDT', 'HT-USDT', 'OMG-USDT',
+               'OKB-USDT', 'KCS-USDT', 'CRV-USDT', 'GRT-USDT', 'AMP-USDT', 'DENT-USDT', '100STARL-USDT',
+               'CRO-USDT', 'AUDIO-USDT', 'DYDX-USDT', 'ENJ-USDT', 'HEX-USDT', 'MKR-USDT', 'PUNDIX-USDT',
+               'COMP-USDT', 'TEL-USDT', 'REV-USDT']
 busdt = ["FTTBUSD","SRMBUSD","BTTCBUSD","KEYBUSD","AGIXBUSD","GFTBUSD"]
 usdtb = ["FTTUSDT","SRMUSDT","BTTCUSDT","KEYUSDT","AGIXUSDT","GFTUSDT"]
 users_json="users.json"
@@ -365,6 +379,7 @@ async def usdt_dispatcher():
     to an external API every 3 seconds to retrieve the latest USDT price in JSON format. Any exceptions raised during the
     request are printed to the console. No parameters are passed to the function and it does not return anything.
     """
+    global usdt_price
     # create an aiohttp session object
     async with aiohttp.ClientSession() as session:
         # loop indefinitely
@@ -381,18 +396,28 @@ async def usdt_dispatcher():
                 print(f"Exception encountered: {e}")
             # wait for 3 seconds before making the next request
             await asyncio.sleep(3)
+async def binance_socket_and_usdt_dispatcher():
+    global ticker_binance, usdt_price
+    coin_types = dict(coinsjson).keys()
+    updated_ticker_binance = {}
+    async with aiohttp.ClientSession() as session:
+        while True:
+            try:
+
+                async with session.get(usdt_price_ramzi_url) as response:
+                    data = await response.json()
+                    usdt_price = data['data'][-1][0]
+                async with session.get(binance_ticker) as response:
+                    result = await response.json()
+                    for i in result:
+                        if i["symbol"] in coin_types:
+                            updated_ticker_binance[i["symbol"]] = i["price"]
+                    ticker_binance = updated_ticker_binance
+                await asyncio.sleep(3)
+
+            except Exception as e:
+                print(f"Exception encountered: {e}")
 async def max_profit():
-   """
-   Asynchronously retrieves a list of coins along with their pair IDs from the pairs_url
-     and adds them to the main_list dictionary if their quote currency is "irr".
-       This function runs continuously and sleeps for 10 seconds after each iteration until it is manually stopped.
-
-   Parameters:
-   None
-
-   Returns:
-   None
-   """
    global main_list
    while True:
       try:
@@ -403,11 +428,172 @@ async def max_profit():
          await asyncio.sleep(10)
       except Exception:
          pass
-async def check_buy():
-   global main_list
-   global counter
-   global usdt_price
-   global ticker_binance
+
+
+ticker_kucoin,ticker_gate = [],[]
+# async def check_buy():
+#    global main_list,counter,usdt_price,ticker_binance,ticker_gate,ticker_kucoin
+#    while True:
+#       try:
+#          global_coins = {}
+#          ticker_gate = requests.get(gate).json()
+#          ticker_kucoin = requests.get(kucoin_ticker).json()["data"]["ticker"]
+#          for i in ticker_gate:
+#             try:
+#                if i["currency_pair"] in gate_coin:
+#                   global_coins[i["currency_pair"].split("_")[0]+"-USDT"] = i["last"]
+#             except:
+#                continue
+#          for i,p in ticker_binance.items():
+#             try:
+#                if i.endswith("BUSD") or i.endswith("USDT"):
+#                   if i in busdt:
+#                      global_coins[i.split("BUSD")[0]+"-USDT"] = p
+#                   elif i not in usdtb:
+#                      global_coins[i.split("USDT")[0]+"-USDT"] = p
+#             except:
+#                continue
+#          for i in ticker_kucoin:
+#             try:
+#                if i["symbol"] in kucoin_coin:
+#                #    # global_coins[i["symbol"]] = i["high"]
+#                   global_coins[i["symbol"]] = i["last"]
+
+#             except:
+#                continue
+#          for key,value in main_list.items():
+#             try:
+#                if key in list(coefficient.keys()):
+#                   coe = coefficient[key][1]
+#                   now_price = float(global_coins[coefficient[key][0]])
+#                else:
+#                   now_price = float(global_coins[key])
+#                   coe = 0
+#             except KeyError:
+#                continue
+#             orders_sell = requests.get(order_book_sell(value)).json()["data"][:5]
+#             for order in orders_sell:
+#                amount = float(order[1]) if coe == 0 else float(order[1])/coe
+#                total = float(order[2]) if coe == 0 else float(order[2])/coe
+#                diff = float(float(now_price)*float(amount))*usdt_price-total
+#                chains_diff = get_chain(key,diff,order[0],2)
+#                if chains_diff != -1:
+#                   diff = chains_diff
+#                diff = float(diff)
+#                is_allowed = allowed(diff,order[2])
+#                # text = "Diff : {}".format(priceable(diff)) if chains_diff == -1 else  "Diff : {}".format(priceable(diff))
+#                # text += "\nTPrice : {}\nBUY : {}\nRPrice : {}\nAmount : {}\nGPrice : {}\nUSDT : {}\n".format(priceable(float(order[2])),key,priceable(float(order[0])),priceable(amount),priceable(float(now_price)),priceable(usdt_price))
+#                # text += "{}".format(counter)
+#                # print(text)
+#                if is_allowed[1]:
+#                   text = "Diff : {}".format(priceable(diff)) if chains_diff == -1 else  "Diff : {}".format(priceable(diff))
+#                   text += "\nTPrice : {}\nBUY : {}\nRPrice : {}\nAmount : {}\nGPrice : {}\nUSDT : {}\n".format(priceable(float(order[2])),key,priceable(float(order[0])),priceable(amount),(float(now_price)),priceable(usdt_price))
+#                   text += "{}".format(counter)
+#                   inlinekeyboard = [[InlineKeyboardButton(text="بلاک",callback_data="block@"+"BUY_"+str(order[2])[:3]+key+"_"+str(amount))]]
+#                   rp = InlineKeyboardMarkup(inlinekeyboard)
+#                   if coe != 0:
+#                      text += "\nCoe : {}".format(str(coe))
+#                   for username,ids in main_json["users"].items():
+#                      try:
+#                         is_blocked = 1
+#                         if username in block_list.keys():
+#                            is_blocked = "BUY_"+str(order[2])[:3]+key+"_"+str(amount) not in block_list[username]
+#                         if ids[2]:
+#                            if key not in main_json["ban"][username] and is_blocked:
+#                               await bot_indiviual.send_message(chat_id=ids[0], text=text,reply_markup=rp)
+#                               await asyncio.sleep(0.01)
+#                         elif ids[2] == 0 and is_allowed[0]:
+#                            if key not in main_json["ban"][username] and is_blocked:
+#                               await bot_indiviual.send_message(chat_id=ids[0], text=text,reply_markup=rp)
+#                               await asyncio.sleep(0.01)
+#                      except:
+#                         continue
+#                   counter += 1
+#          for _,ids in main_json["users"].items():
+#             try:
+#                if ids[1]:
+#                   await bot_indiviual.send_message(chat_id=ids[0], text=f"BUY RECYCLING ... \n USDT : {(usdt_price)}")
+#                   await asyncio.sleep(0.01)
+#             except Exception as e:
+#                print(e)
+#                continue
+#       except Exception as e:
+#          print(e)
+
+#       await asyncio.sleep(3)
+
+def extract_coefficient(name):
+    """
+    Given a string `name`, this function extracts the starting numeric coefficient 
+    from the string and returns it as an integer. If no numeric coefficient is found, 
+    the function returns 1. 
+
+    Parameters:
+    name (str): The string from which the numeric coefficient is to be extracted.
+
+    Returns:
+    int: The integer value of the extracted numeric coefficient or 1 if no numeric 
+         coefficient is found.
+    """
+    coefficient = ""
+    for i in name:
+        if i.isdigit():
+            coefficient += i
+        elif coefficient:
+            break
+    return int(coefficient) if coefficient else 1
+
+
+def get_prices_from_gitcoin(global_coins,gateio_coins):
+   gateio_response = []
+   try:
+      for coin in gateio_coins:
+         gateio_response.append(requests.get(gate+f"?currency_pair={coin}").json()[0])
+      for record in gateio_response:
+         if record["currency_pair"] in gate_coin:
+            global_coins[record["currency_pair"].split("_")[0]+"-USDT"] = record["last"]
+
+#return proper exception
+   except Exception as e:
+      print(e)
+   
+   return global_coins
+def get_prices_from_binance(global_coins,coinsjson):
+   coin_types = dict(coinsjson).keys()
+   global_coins = {}
+   try:
+      binance_response = requests.get(binance_ticker).json()
+      for record in binance_response:
+         if record["symbol"] in coin_types:
+            global_coins[record["symbol"]] = record["price"]
+   except:
+      pass
+   return global_coins
+
+def get_prices_from_kucoin(global_coins,kucoin_coin):
+   try:
+      kucoin_response = requests.get(kucoin_ticker).json()
+      for record in kucoin_response:
+         if record["symbol"] in kucoin_coin:
+            global_coins[record["symbol"]] = record["last"]
+   
+   except:
+      pass
+   return global_coins
+async def cleaned_check_trades():
+   global main_list,counter,usdt_price,ticker_binance,ticker_gate,ticker_kucoin,coinsjson
+   global_coins = {}
+   while True:
+      try:
+         global_coins = get_prices_from_gitcoin(global_coins)
+         global_coins = get_prices_from_binance(global_coins,coinsjson)
+         global_coins = get_prices_from_kucoin(global_coins,kucoin_coin)
+
+         
+      except:
+         pass
+async def check_trades():
+   global main_list,counter,usdt_price,ticker_binance,ticker_gate,ticker_kucoin
    while True:
       try:
          global_coins = {}
@@ -419,6 +605,7 @@ async def check_buy():
                   global_coins[i["currency_pair"].split("_")[0]+"-USDT"] = i["last"]
             except:
                continue
+
          for i,p in ticker_binance.items():
             try:
                if i.endswith("BUSD") or i.endswith("USDT"):
@@ -433,11 +620,12 @@ async def check_buy():
                if i["symbol"] in kucoin_coin:
                #    # global_coins[i["symbol"]] = i["high"]
                   global_coins[i["symbol"]] = i["last"]
-
             except:
                continue
          for key,value in main_list.items():
             try:
+               print(main_list.items())
+               input()
                if key in list(coefficient.keys()):
                   coe = coefficient[key][1]
                   now_price = float(global_coins[coefficient[key][0]])
@@ -447,6 +635,7 @@ async def check_buy():
             except KeyError:
                continue
             orders_sell = requests.get(order_book_sell(value)).json()["data"][:5]
+            orders_buy = requests.get(order_book_buy(value)).json()["data"][:5]
             for order in orders_sell:
                amount = float(order[1]) if coe == 0 else float(order[1])/coe
                total = float(order[2]) if coe == 0 else float(order[2])/coe
@@ -462,7 +651,7 @@ async def check_buy():
                # print(text)
                if is_allowed[1]:
                   text = "Diff : {}".format(priceable(diff)) if chains_diff == -1 else  "Diff : {}".format(priceable(diff))
-                  text += "\nTPrice : {}\nBUY : {}\nRPrice : {}\nAmount : {}\nGPrice : {}\nUSDT : {}\n".format(priceable(float(order[2])),key,priceable(float(order[0])),priceable(amount),priceable(float(now_price)),priceable(usdt_price))
+                  text += "\nTPrice : {}\nBUY : {}\nRPrice : {}\nAmount : {}\nGPrice : {}\nUSDT : {}\n".format(priceable(float(order[2])),key,priceable(float(order[0])),priceable(amount),(float(now_price)),priceable(usdt_price))
                   text += "{}".format(counter)
                   inlinekeyboard = [[InlineKeyboardButton(text="بلاک",callback_data="block@"+"BUY_"+str(order[2])[:3]+key+"_"+str(amount))]]
                   rp = InlineKeyboardMarkup(inlinekeyboard)
@@ -484,68 +673,11 @@ async def check_buy():
                      except:
                         continue
                   counter += 1
-         for _,ids in main_json["users"].items():
-            try:
-               if ids[1]:
-                  await bot_indiviual.send_message(chat_id=ids[0], text="BUY RECYCLING ... ")
-                  await asyncio.sleep(0.01)
-            except Exception as e:
-               print(e)
-               continue
-      except Exception as e:
-         print(e)
-
-      await asyncio.sleep(3)
-
-async def check_sell():
-   global main_list
-   global counter
-   global usdt_price
-   global ticker_binance
-   while 1:
-      try:
-         global_coins = {}
-         ticker_gate = requests.get(gate).json()
-         ticker_kucoin = requests.get(kucoin_ticker).json()["data"]["ticker"]
-         for i in ticker_gate:
-            try:
-               if i["currency_pair"] in gate_coin:
-                  global_coins[i["currency_pair"].split("_")[0]+"-USDT"] = i["last"]
-            except:
-               continue
-         for i,p in ticker_binance.items():
-            try:
-               if i.endswith("BUSD") or i.endswith("USDT"):
-                  if i in busdt:
-                     global_coins[i.split("BUSD")[0]+"-USDT"] = p
-                  elif i not in usdtb:
-                     global_coins[i.split("USDT")[0]+"-USDT"] = p
-            except:
-               continue
-         for i in ticker_kucoin:
-            try:
-               if i["symbol"] in kucoin_coin:
-                  # global_coins[i["symbol"]] = i["high"]
-                  global_coins[i["symbol"]] = i["last"]
-
-            except:
-               continue
-         for key,value in main_list.items():
-            try:
-               if key in list(coefficient.keys()):
-                  coe = coefficient[key][1]
-                  now_price = float(global_coins[coefficient[key][0]])
-               else:
-                  now_price = float(global_coins[key])
-                  coe = 0
-            except KeyError:
-               continue
-            orders = requests.get(order_book(value)).json()["data"][:5]
-            for order in orders:
+            for order in orders_buy:
                amount = float(order[1]) if coe == 0 else float(order[1])/coe
                total = float(order[2]) if coe == 0 else float(order[2])/coe
-               diff = total-(float(now_price)*float(amount)*float(usdt_price))
-               chains_diff = get_chain(key,diff,order[0],1)
+               diff = float(float(now_price)*float(amount))*usdt_price-total
+               chains_diff = get_chain(key,diff,order[0],2)
                if chains_diff != -1:
                   diff = chains_diff
                diff = float(diff)
@@ -556,7 +688,7 @@ async def check_sell():
                # print(text)
                if is_allowed[1]:
                   text = "Diff : {}".format(priceable(diff)) if chains_diff == -1 else  "Diff : {}".format(priceable(diff))
-                  text += "\nTPrice : {}\nSELL : {}\nRPrice : {}\nAmount : {}\nGPrice : {}\nUSDT : {}\n".format(priceable(float(order[2])),key,priceable(float(order[0])),priceable(amount),priceable(float(now_price)),priceable(usdt_price))
+                  text += "\nTPrice : {}\nSELL : {}\nRPrice : {}\nAmount : {}\nGPrice : {}\nUSDT : {}\n".format(priceable(float(order[2])),key,priceable(float(order[0])),priceable(amount),(float(now_price)),priceable(usdt_price))
                   text += "{}".format(counter)
                   inlinekeyboard = [[InlineKeyboardButton(text="بلاک",callback_data="block@"+"SELL_"+str(order[2])[:3]+key+"_"+str(amount))]]
                   rp = InlineKeyboardMarkup(inlinekeyboard)
@@ -581,7 +713,15 @@ async def check_sell():
          for _,ids in main_json["users"].items():
             try:
                if ids[1]:
-                  await bot_indiviual.send_message(chat_id=ids[0], text="SELL RECYCLING ... ")
+                  await bot_indiviual.send_message(chat_id=ids[0], text=f"SELL RECYCLING ... \n USDT : {(usdt_price)}")
+                  await asyncio.sleep(0.01)
+            except Exception as e:
+               print(e)
+               continue
+         for _,ids in main_json["users"].items():
+            try:
+               if ids[2]:
+                  await bot_indiviual.send_message(chat_id=ids[0], text=f"Buy RECYCLING ... \n USDT : {(usdt_price)}")
                   await asyncio.sleep(0.01)
             except Exception as e:
                print(e)
@@ -590,6 +730,98 @@ async def check_sell():
          print(e)
          continue
       await asyncio.sleep(3)
+
+
+# async def check_sell():
+#    global main_list,counter,usdt_price,ticker_binance, ticker_gate,ticker_kucoin
+#    while 1:
+#       try:
+#          global_coins = {}
+#          ticker_gate = requests.get(gate).json()
+#          ticker_kucoin = requests.get(kucoin_ticker).json()["data"]["ticker"]
+#          for i in ticker_gate:
+#             try:
+#                if i["currency_pair"] in gate_coin:
+#                   global_coins[i["currency_pair"].split("_")[0]+"-USDT"] = i["last"]
+#             except:
+#                continue
+#          for i,p in ticker_binance.items():
+#             try:
+#                if i.endswith("BUSD") or i.endswith("USDT"):
+#                   if i in busdt:
+#                      global_coins[i.split("BUSD")[0]+"-USDT"] = p
+#                   elif i not in usdtb:
+#                      global_coins[i.split("USDT")[0]+"-USDT"] = p
+#             except:
+#                continue
+#          for i in ticker_kucoin:
+#             try:
+#                if i["symbol"] in kucoin_coin:
+#                   # global_coins[i["symbol"]] = i["high"]
+#                   global_coins[i["symbol"]] = i["last"]
+
+#             except:
+#                continue
+#          for key,value in main_list.items():
+#             try:
+#                if key in list(coefficient.keys()):
+#                   coe = coefficient[key][1]
+#                   now_price = float(global_coins[coefficient[key][0]])
+#                else:
+#                   now_price = float(global_coins[key])
+#                   coe = 0
+#             except KeyError:
+#                continue
+#             orders = requests.get(order_book_buy(value)).json()["data"][:5]
+#             for order in orders:
+#                amount = float(order[1]) if coe == 0 else float(order[1])/coe
+#                total = float(order[2]) if coe == 0 else float(order[2])/coe
+#                diff = total-(float(now_price)*float(amount)*float(usdt_price))
+#                chains_diff = get_chain(key,diff,order[0],1)
+#                if chains_diff != -1:
+#                   diff = chains_diff
+#                diff = float(diff)
+#                is_allowed = allowed(diff,order[2])
+#                # text = "Diff : {}".format(priceable(diff)) if chains_diff == -1 else  "Diff : {}".format(priceable(diff))
+#                # text += "\nTPrice : {}\nSELL : {}\nRPrice : {}\nAmount : {}\nGPrice : {}\nUSDT : {}\n".format(priceable(float(order[2])),key,priceable(float(order[0])),priceable(amount),priceable(float(now_price)),priceable(usdt_price))
+#                # text += "{}".format(counter)
+#                # print(text)
+#                if is_allowed[1]:
+#                   text = "Diff : {}".format(priceable(diff)) if chains_diff == -1 else  "Diff : {}".format(priceable(diff))
+#                   text += "\nTPrice : {}\nSELL : {}\nRPrice : {}\nAmount : {}\nGPrice : {}\nUSDT : {}\n".format(priceable(float(order[2])),key,priceable(float(order[0])),priceable(amount),(float(now_price)),priceable(usdt_price))
+#                   text += "{}".format(counter)
+#                   inlinekeyboard = [[InlineKeyboardButton(text="بلاک",callback_data="block@"+"SELL_"+str(order[2])[:3]+key+"_"+str(amount))]]
+#                   rp = InlineKeyboardMarkup(inlinekeyboard)
+#                   if coe != 0:
+#                      text += "\nCoe : {}".format(str(coe))
+#                   for username,ids in main_json["users"].items():
+#                      try:
+#                         is_blocked = 1
+#                         if username in block_list.keys():
+#                            is_blocked = "SELL_"+str(order[2])[:3]+key+"_"+str(amount) not in block_list[username]
+#                         if ids[2]:
+#                            if key not in main_json["ban"][username] and is_blocked:
+#                               await bot_indiviual.send_message(chat_id=ids[0], text=text,reply_markup=rp)
+#                               await asyncio.sleep(0.01)
+#                         elif ids[2] == 0 and is_allowed[0]:
+#                            if key not in main_json["ban"][username] and is_blocked:
+#                               await bot_indiviual.send_message(chat_id=ids[0], text=text,reply_markup=rp)
+#                               await asyncio.sleep(0.01)
+#                      except:
+#                         continue
+#                   counter += 1
+#          for _,ids in main_json["users"].items():
+#             try:
+#                if ids[1]:
+#                   await bot_indiviual.send_message(chat_id=ids[0], text=f"SELL RECYCLING ... \n USDT : {(usdt_price)}")
+#                   await asyncio.sleep(0.01)
+#             except Exception as e:
+#                print(e)
+#                continue
+#       except Exception as e:
+#          print(e)
+#          continue
+#       await asyncio.sleep(3)
 async def binance_socket():
    global ticker_binance
    coin_types = dict(coinsjson).keys()
@@ -610,11 +842,17 @@ def run1():
    loop.run_until_complete(asyncio.gather(
       max_profit()
    ))
+# def run2():
+#    loop = asyncio.new_event_loop()
+#    asyncio.set_event_loop(loop)
+#    loop.run_until_complete(asyncio.gather(
+#       check_sell(),check_buy()
+#    ))
 def run2():
    loop = asyncio.new_event_loop()
    asyncio.set_event_loop(loop)
    loop.run_until_complete(asyncio.gather(
-      check_sell(),check_buy()
+      check_trades()
    ))
 # def run3():
 #     loop = asyncio.new_event_loop()
@@ -623,11 +861,11 @@ def run2():
 def run4():
    loop = asyncio.new_event_loop()
    asyncio.set_event_loop(loop)
-   loop.run_until_complete(usdt_dispatcher())
-def run5():
-   loop = asyncio.new_event_loop()
-   asyncio.set_event_loop(loop)
-   loop.run_until_complete(binance_socket())
+   loop.run_until_complete(binance_socket_and_usdt_dispatcher())
+# def run5():
+#    loop = asyncio.new_event_loop()
+#    asyncio.set_event_loop(loop)
+#    loop.run_until_complete(binance_socket())
 if __name__ == "__main__":
    bot = Application.builder().token(token).build()
    bot.add_handler(CommandHandler("start",start))
@@ -643,5 +881,5 @@ if __name__ == "__main__":
    threading.Thread(target=run1).start()
    # threading.Thread(target=run3).start()
    threading.Thread(target=run4).start()
-   threading.Thread(target=run5).start()
+   # threading.Thread(target=run5).start()
    bot.run_polling(1,pool_timeout=5,timeout=15)
