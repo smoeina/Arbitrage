@@ -4,7 +4,7 @@ from telegram.ext import *
 import aiohttp
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 locale.setlocale(locale.LC_ALL,"en_US.UTF8")
-token = "6180819073:AAG0Q58j8BiJo92YyenF6-2-kq0hfdCu7qQ"
+token = "-"
 updater=Updater(token,update_queue=True)
 """
 Mexc token information:
